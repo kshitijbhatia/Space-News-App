@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:news_app/controllers/article_controllers.dart';
 
 class HomePage extends StatefulWidget{
   const HomePage({super.key});
@@ -9,12 +12,19 @@ class HomePage extends StatefulWidget{
 
 class _HomePageState extends State<HomePage>{
 
+  void api() async{
+    final response = await ArticleController.getInstance.getArticles();
+    log('${response}');
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const SafeArea(
+    return SafeArea(
         child: Scaffold(
-          body: Text('Home Page', style: TextStyle(fontSize: 20),),
+          body: TextButton(onPressed: () async {
+            api();
+    }, child: Text('Request'),
         )
-    );
+    ));
   }
 }
