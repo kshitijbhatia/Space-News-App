@@ -18,9 +18,8 @@ class ApiService{
     )
   );
 
-  Future<Response?> getArticles() async {
+  Future<Response<Map<String, dynamic>>?> getArticles() async {
     try{
-      Response response;
 
       Map<String, dynamic> queryParams = {
         'has_event' : true,
@@ -28,15 +27,10 @@ class ApiService{
         'is_featured' : true
       };
 
-      response = await _dio.get(Constants.getArticlesEndpoint, queryParameters: queryParams);
-      log('${response.data!["results"].runtimeType} ${response.statusCode} ');
+      final Response<Map<String, dynamic>> response = await _dio.get(Constants.getArticlesEndpoint, queryParameters: queryParams);
       return response;
     }on DioException catch(err){
-      if(err.response == null){
-        return null;
-      }else{
-        return err.response;
-      }
+      return null;
     }
   }
 
