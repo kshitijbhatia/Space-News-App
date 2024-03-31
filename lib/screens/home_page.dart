@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:news_app/controllers/article_controllers.dart';
 import 'package:news_app/models/article.dart';
@@ -23,7 +22,7 @@ class _HomePageState extends State<HomePage> {
     final response = await ArticleController.getInstance.getArticles();
     if(response.isRight){
       CustomError res = response.right;
-      log('Status Code : ${res.statusCode}, Status Message : ${res.statusMessage}');
+      ScaffoldMessenger.of(context).showSnackBar(getCustomSnackBar("Error Occurred"));
       throw Error();
     }
     return response.left;
@@ -37,21 +36,18 @@ class _HomePageState extends State<HomePage> {
 
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-          toolbarHeight: height/14,
-          elevation: 10,
-          title: const Text('Space Flight News', style: TextStyle(color: Colors.white),),
-          backgroundColor: AppTheme.primaryColor,
-        ),
           body: FutureBuilder<List<Article>>(
             future: _getArticles(),
             builder: (context, snapshot) {
               if(snapshot.connectionState == ConnectionState.done){
                 if(snapshot.hasData){
-                  articles = snapshot.data!;
-                  return ArticlesList(articles: articles);
+                  articles.addAll(snapshot.data!);
+                  return _ArticlesList(
+                    articles: articles,
+                    getArticles: _getArticles,
+                  );
                 }else if(snapshot.hasError){
-                  ScaffoldMessenger.of(context).showSnackBar(getCustomSnackBar("Error Occurred"));
+                  // Has Error Logic
                 }
               }else if(snapshot.connectionState == ConnectionState.waiting){
                 return const LoadingScreen();
@@ -64,16 +60,31 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class ArticlesList extends StatefulWidget{
-  const ArticlesList({super.key, required this.articles});
+class _ArticlesList extends StatefulWidget{
+  const _ArticlesList({super.key, required this.articles, required this.getArticles});
 
   final List<Article> articles;
+  final Function getArticles;
 
   @override
-  State<ArticlesList> createState() => _ArticlesListState();
+  State<_ArticlesList> createState() => _ArticlesListState();
 }
 
-class _ArticlesListState extends State<ArticlesList>{
+class _ArticlesListState extends State<_ArticlesList>{
+
+  final _scrollController = ScrollController();
+
+  _scrollListener(){
+    if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
+      widget.getArticles();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,28 +92,54 @@ class _ArticlesListState extends State<ArticlesList>{
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
-    return SingleChildScrollView(
-      child: Container(
-        width: width,
-        height: 13*(height/14),
-        child: ListView.builder(
-          itemCount: widget.articles.length,
-          itemBuilder: (context, index) {
-            Article currentArticle = widget.articles[index];
-            return ArticleCard(
-              title: currentArticle.title,
-              summary: currentArticle.summary,
-              image: currentArticle.image,
-              source: currentArticle.newsSite,
-              url: currentArticle.url,
-              publishedAt: currentArticle.publishedAt,
-              updatedAt: currentArticle.updatedAt,
-            );
-          },
-        ),
+    return Container(
+      width: width,
+      height: height,
+      child: Column(
+        children: [
+          Expanded(
+            flex: 1,
+              child: Container(
+                color: AppTheme.primaryColor,
+                width: width,
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.only(left: 10),
+                child: const Text('Space News', style: TextStyle(fontSize: 26, color: Colors.white),),
+              )
+          ),
+          Expanded(
+            flex: 10,
+            child: Container(
+              width: width,
+              height: 12.3*(height)/14,
+              child: ListView.builder(
+                controller: _scrollController,
+                itemCount: widget.articles.length + 1,
+                itemBuilder: (context, index) {
+                  if(index < widget.articles.length){
+                    Article currentArticle = widget.articles[index];
+                    return ArticleCard(
+                      article: currentArticle,
+                    );
+                  }else{
+                    return Container(
+                      width: width,
+                      height: height/12,
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+
 
 

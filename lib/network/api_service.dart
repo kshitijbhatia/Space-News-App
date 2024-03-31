@@ -1,9 +1,9 @@
-import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:news_app/models/custom_error.dart';
-import 'package:news_app/network/api_error_handler.dart';
+import 'package:news_app/network/api_interceptors.dart';
 import 'package:news_app/utils/constants.dart';
+import 'package:news_app/utils/utils.dart';
 
 class ApiService{
   ApiService._();
@@ -13,17 +13,17 @@ class ApiService{
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: Constants.baseUrl,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
       headers: {
         'Accept' : 'application/json'
       },
-    )
+    ),
   );
 
   // Get All Articles
   Future<Either<Map<String, dynamic>, CustomError>> getArticles() async {
     try{
+      _dio.interceptors.add(GetInterceptor());
+
       String method = 'GET';
 
       Map<String, dynamic> queryParams = {
@@ -47,7 +47,7 @@ class ApiService{
             statusMessage: "DNS/Network Error");
         return Right(res);
       }
-      String errorMessage = handleError(error);
+      String errorMessage = Utils.handleError(error);
       CustomError res = CustomError(
           statusCode: error.response!.statusCode,
           statusMessage: errorMessage);
