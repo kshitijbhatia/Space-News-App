@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/models/article.dart';
+import 'package:news_app/screens/web_view_page.dart';
 import 'package:news_app/utils/constants.dart';
 import 'package:news_app/utils/utils.dart';
 import 'package:readmore/readmore.dart';
@@ -21,7 +22,6 @@ class ArticleCard extends StatefulWidget{
 class _ArticleCardState extends State<ArticleCard>{
   @override
   Widget build(BuildContext context) {
-
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
@@ -44,13 +44,18 @@ class _ArticleCardState extends State<ArticleCard>{
           )
         ]
       ),
-      child: Column(
-        children: [
-            _ArticleImage(image: widget.article.image),
-            _ArticleTitle(title: widget.article.title),
-            _ArticleSummary(summary: widget.article.summary),
-            _ArticleDate(publishedAt: widget.article.publishedAt, updatedAt: widget.article.updatedAt)
-        ],
+      child: GestureDetector(
+        onTap: (){
+          Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewPage(url: widget.article.url),));
+        },
+        child: Column(
+          children: [
+              _ArticleImage(image: widget.article.image),
+              _ArticleTitle(title: widget.article.title),
+              _ArticleSummary(summary: widget.article.summary),
+              _ArticleDate(publishedAt: widget.article.publishedAt, updatedAt: widget.article.updatedAt)
+          ],
+        ),
       ),
     );
   }
@@ -99,13 +104,15 @@ class _ArticleImage extends StatelessWidget{
         },
         errorWidget: (context, url, error) {
           return Container(
-            width: width,
-            height: height/4,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.grey
-            ),
-            child: const Icon(Icons.error_outline, size: 60),
+              width: width,
+              height : height/4,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  image: DecorationImage(
+                      image: AssetImage('assets/space.webp'),
+                      fit: BoxFit.fill
+                  )
+              )
           );
         },
     );

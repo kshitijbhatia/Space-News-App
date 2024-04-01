@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:news_app/models/custom_error.dart';
@@ -13,6 +15,8 @@ class ApiService{
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: Constants.baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
       headers: {
         'Accept' : 'application/json'
       },
@@ -20,16 +24,19 @@ class ApiService{
   );
 
   // Get All Articles
-  Future<Either<Map<String, dynamic>, CustomError>> getArticles() async {
+  Future<Either<Map<String, dynamic>, CustomError>> getArticles(int pageSize, int currentPage) async {
     try{
       _dio.interceptors.add(GetInterceptor());
 
       String method = 'GET';
+      int offset = 4*currentPage;
 
       Map<String, dynamic> queryParams = {
         'has_event' : true,
         'has_launch' : true,
-        'is_featured' : true
+        'is_featured' : true,
+        'limit' : pageSize,
+        'offset' : offset
       };
 
       final Response<Map<String, dynamic>> response = await _dio.request(
@@ -41,18 +48,13 @@ class ApiService{
       return Left(resJson);
 
     } on DioException catch(error){
-      if(error.response == null){
-        CustomError res = CustomError(
-            statusCode: null,
-            statusMessage: "DNS/Network Error");
-        return Right(res);
-      }
       String errorMessage = Utils.handleError(error);
       CustomError res = CustomError(
-          statusCode: error.response!.statusCode,
+          statusCode: error.response?.statusCode,
           statusMessage: errorMessage);
       return Right(res);
     }catch(err){
+      log('inside normal catch');
       CustomError res = CustomError(
           statusCode: null,
           statusMessage: err.toString());

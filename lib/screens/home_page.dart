@@ -1,11 +1,13 @@
+import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:news_app/controllers/article_controllers.dart';
 import 'package:news_app/models/article.dart';
 import 'package:news_app/models/custom_error.dart';
+import 'package:news_app/screens/error_page.dart';
 import 'package:news_app/utils/constants.dart';
 import 'package:news_app/widgets/article_card.dart';
-import 'package:news_app/widgets/loading_screen.dart';
-import 'package:news_app/widgets/snackbar.dart';
+import 'package:news_app/screens/loading_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,16 +18,63 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  List<Article> articles = [];
+  final ScrollController _scrollController = ScrollController();
+  final StreamController<List<Article>> _dataStreamController = StreamController<List<Article>>();
+  Stream<List<Article>> get dataStream => _dataStreamController.stream;
 
-  Future<List<Article>> _getArticles() async {
-    final response = await ArticleController.getInstance.getArticles();
-    if(response.isRight){
-      CustomError res = response.right;
-      ScaffoldMessenger.of(context).showSnackBar(getCustomSnackBar("Error Occurred"));
-      throw Error();
+  final List<Article> _articles = [];
+
+  int _currentPage = 0;
+  final int _pageSize = 4;
+
+  bool _isFetchingData = false;
+  bool _stopFetchingData = false;
+  bool _pleaseTryAgain = false;
+
+  Future<void> _getArticles() async {
+    if(_isFetchingData){
+      return;
     }
-    return response.left;
+    try{
+      setState(() {
+        _isFetchingData = true;
+      });
+      final response = await ArticleController.getInstance.getArticles(_pageSize, _currentPage);
+
+      if(response.isRight){
+        CustomError res = response.right;
+        throw res;
+      }else{
+        if(response.left.isEmpty){
+          setState(() {
+            _stopFetchingData = true;
+          });
+          return;
+        }
+        _articles.addAll(response.left);
+        _dataStreamController.add(_articles);
+        _currentPage++;
+      }
+    } on CustomError catch(err){
+      _dataStreamController.addError(err);
+    } finally {
+      setState(() {
+        _isFetchingData = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getArticles();
+    _scrollController.addListener(() {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      if(maxScroll == currentScroll && !_stopFetchingData){
+        _getArticles();
+      }
+    });
   }
 
 
@@ -34,57 +83,58 @@ class _HomePageState extends State<HomePage> {
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
-    return SafeArea(
-      child: Scaffold(
-          body: FutureBuilder<List<Article>>(
-            future: _getArticles(),
-            builder: (context, snapshot) {
-              if(snapshot.connectionState == ConnectionState.done){
-                if(snapshot.hasData){
-                  articles.addAll(snapshot.data!);
-                  return _ArticlesList(
-                    articles: articles,
-                    getArticles: _getArticles,
-                  );
+    return WillPopScope(
+      onWillPop: () => Future.value(false),
+      child: SafeArea(
+        child: Scaffold(
+            body: StreamBuilder<List<Article>>(
+              stream: dataStream,
+              builder: (context, snapshot){
+                if(snapshot.connectionState == ConnectionState.waiting){
+                  return const LoadingScreen();
                 }else if(snapshot.hasError){
-                  // Has Error Logic
+                  CustomError error = snapshot.error as CustomError;
+                  return const ErrorPage();
+                }else{
+                  final items = snapshot.data;
+                  return _ArticlesList(
+                    articles: items!,
+                    scrollController: _scrollController,
+                    isFetchingData: _isFetchingData,
+                    stopFetchingData: _stopFetchingData,
+                    pleaseTryAgain: _pleaseTryAgain,
+                  );
                 }
-              }else if(snapshot.connectionState == ConnectionState.waiting){
-                return const LoadingScreen();
-              }
-              return Container();
-            },
-          )
+              },
+            )
+        ),
       ),
     );
   }
 }
 
+
 class _ArticlesList extends StatefulWidget{
-  const _ArticlesList({super.key, required this.articles, required this.getArticles});
+  const _ArticlesList({
+    super.key,
+    required this.articles,
+    required this.scrollController,
+    required this.isFetchingData,
+    required this.stopFetchingData,
+    required this.pleaseTryAgain
+  });
 
   final List<Article> articles;
-  final Function getArticles;
+  final ScrollController scrollController;
+  final bool isFetchingData;
+  final bool stopFetchingData;
+  final bool pleaseTryAgain;
 
   @override
   State<_ArticlesList> createState() => _ArticlesListState();
 }
 
 class _ArticlesListState extends State<_ArticlesList>{
-
-  final _scrollController = ScrollController();
-
-  _scrollListener(){
-    if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
-      widget.getArticles();
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_scrollListener);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,17 +153,16 @@ class _ArticlesListState extends State<_ArticlesList>{
                 color: AppTheme.primaryColor,
                 width: width,
                 alignment: Alignment.centerLeft,
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: const Text('Space News', style: TextStyle(fontSize: 26, color: Colors.white),),
               )
           ),
           Expanded(
-            flex: 10,
+            flex: 12,
             child: Container(
               width: width,
-              height: 12.3*(height)/14,
               child: ListView.builder(
-                controller: _scrollController,
+                controller: widget.scrollController,
                 itemCount: widget.articles.length + 1,
                 itemBuilder: (context, index) {
                   if(index < widget.articles.length){
@@ -121,14 +170,16 @@ class _ArticlesListState extends State<_ArticlesList>{
                     return ArticleCard(
                       article: currentArticle,
                     );
-                  }else{
+                  }else if(!widget.stopFetchingData && !widget.pleaseTryAgain && index == widget.articles.length){
                     return Container(
                       width: width,
                       height: height/12,
                       child: const Center(
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(color: AppTheme.primaryColor,),
                       ),
                     );
+                  }else{
+                    return Container();
                   }
                 },
               ),

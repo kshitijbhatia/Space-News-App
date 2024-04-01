@@ -20,3 +20,8 @@ class ScreenSize{
     return MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
   }
 }
+
+extension SizedBoxedExtension on num{
+  SizedBox get h => SizedBox(height: toDouble(),);
+  SizedBox get w => SizedBox(width: toDouble(),);
+}

@@ -27,7 +27,7 @@ class LoadingScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            flex: 10,
+            flex: 12,
             child: Container(
               width: width,
               child: Shimmer.fromColors(

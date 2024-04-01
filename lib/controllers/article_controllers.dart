@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:news_app/models/article.dart';
 import 'package:news_app/models/custom_error.dart';
@@ -14,9 +12,9 @@ class ArticleController{
 
   final ApiService _api = ApiService.getInstance;
 
-  Future<Either<List<Article>,CustomError>> getArticles() async{
+  Future<Either<List<Article>,CustomError>> getArticles(int pageSize, int currentPage) async{
     try{
-      final response = await _api.getArticles();
+      final response = await _api.getArticles(pageSize, currentPage);
 
       if(response.isRight){
         return Right(response.right);

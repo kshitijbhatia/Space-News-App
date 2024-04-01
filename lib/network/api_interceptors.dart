@@ -2,16 +2,10 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 
 class GetInterceptor extends Interceptor{
-  static int _offset = 0;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    _offset += 4;
-    log('Inside Request Interceptor, $_offset');
-    options.queryParameters = {
-      'limit' : '4',
-      'offset' : '$_offset'
-    };
+    log('Inside Request Interceptor');
     super.onRequest(options, handler);
   }
 
