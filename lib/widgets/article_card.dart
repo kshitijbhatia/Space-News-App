@@ -1,11 +1,11 @@
 import 'dart:developer';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:news_app/models/article.dart';
 import 'package:news_app/screens/web_view_page.dart';
 import 'package:news_app/utils/constants.dart';
 import 'package:news_app/utils/utils.dart';
-import 'package:readmore/readmore.dart';
 
 class ArticleCard extends StatefulWidget{
   const ArticleCard({
@@ -20,8 +20,13 @@ class ArticleCard extends StatefulWidget{
 }
 
 class _ArticleCardState extends State<ArticleCard>{
+
+  bool _seeMore = false;
+  _changeSeeMore() => setState(()=> _seeMore = !_seeMore);
+
   @override
   Widget build(BuildContext context) {
+
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
@@ -50,142 +55,133 @@ class _ArticleCardState extends State<ArticleCard>{
         },
         child: Column(
           children: [
-              _ArticleImage(image: widget.article.image),
-              _ArticleTitle(title: widget.article.title),
-              _ArticleSummary(summary: widget.article.summary),
-              _ArticleDate(publishedAt: widget.article.publishedAt, updatedAt: widget.article.updatedAt)
+              _articleImage(),
+              _articleTitle(),
+              _articleSummary(),
+              _articleDate()
           ],
         ),
       ),
     );
   }
-}
 
-class _ArticleImage extends StatelessWidget{
-  const _ArticleImage({super.key, required this.image});
+  // Image for the Article
 
-  final String image;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _articleImage(){
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
     return CachedNetworkImage(
-        imageUrl: image,
-        imageBuilder: (context, imageProvider) {
-          return Container(
+      imageUrl: widget.article.image,
+      imageBuilder: (context, imageProvider) {
+        return Container(
             width: width,
             height : height/4,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: imageProvider,
-                fit: BoxFit.fill
-              )
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                    image: imageProvider,
+                    fit: BoxFit.fill
+                )
             )
-          );
-        },
-        progressIndicatorBuilder: (context, url, progress) {
-          return Container(
-            width: width,
-            height: height/4,
-            decoration: BoxDecoration(
+        );
+      },
+      progressIndicatorBuilder: (context, url, progress) {
+        return Container(
+          width: width,
+          height: height/4,
+          decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: Colors.grey
+          ),
+          child: Center(
+            child: SizedBox(
+              width: width/8,
+              height: height/16,
+              child: const CircularProgressIndicator(color: AppTheme.primaryColor,),
             ),
-            child: Center(
-              child: SizedBox(
-                width: width/8,
-                height: height/16,
-                child: const CircularProgressIndicator(color: AppTheme.primaryColor,),
-              ),
-            ),
-          );
-        },
-        errorWidget: (context, url, error) {
-          return Container(
-              width: width,
-              height : height/4,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  image: DecorationImage(
-                      image: AssetImage('assets/space.webp'),
-                      fit: BoxFit.fill
-                  )
-              )
-          );
-        },
+          ),
+        );
+      },
+      errorWidget: (context, url, error) {
+        return Container(
+            width: width,
+            height : height/4,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image : const DecorationImage(
+                    image: AssetImage('assets/Rocket.jpg'),
+                    fit: BoxFit.fill
+                )
+            )
+        );
+      },
     );
   }
-}
 
-class _ArticleTitle extends StatelessWidget{
-  const _ArticleTitle({super.key, required this.title});
+  // Title for the Article
 
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _articleTitle(){
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
     return Container(
       width: width,
       padding: const EdgeInsets.all(10),
       child: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.w500,
-          ),
+        widget.article.title,
+        style: const TextStyle(
+          color: Colors.black,
+          fontSize: 22,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
-}
 
-class _ArticleSummary extends StatefulWidget{
-  const _ArticleSummary({super.key, required this.summary});
+  // Summary of the Article
 
-  final String summary;
-
-  @override
-  State<_ArticleSummary> createState() => _ArticleSummaryState();
-}
-
-class _ArticleSummaryState extends State<_ArticleSummary> {
-
-
-  @override
-  Widget build(BuildContext context) {
-
+  Widget _articleSummary(){
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
+    String getHalfSummary(){
+      String summary = widget.article.summary;
+      List<String> wordList = summary.split(' ').sublist(0, 20);
+      String halfSummary = "";
+      wordList.forEach((element) {
+        halfSummary += element;
+        halfSummary += " ";
+      },);
+      return halfSummary;
+    }
+
     return Container(
-      width: width,
-      // height: height/8,
-      padding: const EdgeInsets.all(10),
-      child: ReadMoreText(
-        style: const TextStyle(fontSize: 20),
-        widget.summary,
-        trimMode: TrimMode.Line,
-        trimLines: 2,
-        trimCollapsedText: '...',
-        trimExpandedText: '',
-        colorClickableText: Colors.black,
-      ),
+        width: width,
+        padding: const EdgeInsets.all(10),
+        child: RichText(
+            text: TextSpan(
+              style: const TextStyle(fontSize: 18, color: Colors.black),
+              children: <TextSpan>[
+                TextSpan(
+                  text: _seeMore ? widget.article.summary : getHalfSummary(),
+                ),
+                TextSpan(
+                  text: _seeMore ? 'See Less' : '... See More',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => setState(() => _changeSeeMore())
+                )
+              ]
+            )
+        )
     );
   }
-}
 
-class _ArticleDate extends StatelessWidget{
-  const _ArticleDate({super.key, required this.updatedAt, required this.publishedAt});
+  // Date on the Article
 
-  final String publishedAt;
-  final String updatedAt;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _articleDate(){
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
     return Container(
@@ -193,7 +189,8 @@ class _ArticleDate extends StatelessWidget{
       height: height/22,
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.only(left: 10),
-      child: Text(Utils.getDaysAgo(updatedAt), style: const TextStyle(fontSize: 16),),
+      child: Text(Utils.getDaysAgo(widget.article.updatedAt), style: const TextStyle(fontSize: 16),),
     );
   }
+
 }

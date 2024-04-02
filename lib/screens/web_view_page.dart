@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:news_app/utils/constants.dart';
 import 'package:news_app/widgets/snackbar.dart';
@@ -77,20 +79,31 @@ class _WebViewComponent extends StatefulWidget{
 }
 
 class _WebViewComponentState extends State<_WebViewComponent> {
-  var loadingPercentage = 0;
-
   late final WebViewController controller;
+
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel('SnackBar', onMessageReceived: (p0) {
-        ScaffoldMessenger.of(context).showSnackBar(getCustomSnackBar(p0.message));
-      },)
-      ..loadRequest(Uri.parse(widget.url)
-      );
+      ..enableZoom(true)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url){
+            setState(() {
+              _isLoading = true;
+            });
+          },
+          onPageFinished: (url) {
+            setState(() {
+              _isLoading = false;
+            });
+          },
+        )
+      )
+      ..loadRequest(Uri.parse(widget.url));
   }
 
   @override
@@ -98,7 +111,9 @@ class _WebViewComponentState extends State<_WebViewComponent> {
     double width = ScreenSize.getWidth(context);
     return Container(
       width: width,
-      child: WebViewWidget(controller: controller,)
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator( color: AppTheme.primaryColor,),)
+          : WebViewWidget(controller: controller,)
     );
   }
 }

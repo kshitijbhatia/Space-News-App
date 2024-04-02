@@ -1,11 +1,9 @@
 import 'dart:developer';
-
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:news_app/models/custom_error.dart';
 import 'package:news_app/network/api_interceptors.dart';
 import 'package:news_app/utils/constants.dart';
-import 'package:news_app/utils/utils.dart';
 
 class ApiService{
   ApiService._();
@@ -47,11 +45,9 @@ class ApiService{
       final Map<String, dynamic> resJson = response.data!;
       return Left(resJson);
 
-    } on DioException catch(error){
-      String errorMessage = Utils.handleError(error);
-      CustomError res = CustomError(
-          statusCode: error.response?.statusCode,
-          statusMessage: errorMessage);
+    } on DioException catch(err){
+      CustomError res = err.error as CustomError;
+      log('${res.statusCode} ${res.statusMessage}');
       return Right(res);
     }catch(err){
       log('inside normal catch');

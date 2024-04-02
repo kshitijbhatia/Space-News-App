@@ -1,5 +1,7 @@
 import 'dart:developer';
 import 'package:dio/dio.dart';
+import 'package:news_app/models/custom_error.dart';
+import 'package:news_app/utils/utils.dart';
 
 class GetInterceptor extends Interceptor{
 
@@ -17,7 +19,11 @@ class GetInterceptor extends Interceptor{
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    log('Inside Error Interceptor');
-    super.onError(err, handler);
+    String errorMessage = Utils.handleError(err);
+    CustomError customError = CustomError(
+      statusCode: err.response?.statusCode,
+      statusMessage: errorMessage,
+    );
+    throw DioException(requestOptions: err.requestOptions, response: err.response, error: customError);
   }
 }
