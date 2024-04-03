@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:news_app/controllers/article_controllers.dart';
 import 'package:news_app/models/article.dart';
@@ -56,22 +57,20 @@ class _HomePageState extends State<HomePage> {
 
       final response = await ArticleController.getInstance.getArticles(_pageSize, _currentPage);
 
-      if (response.isRight) {
-        CustomError res = response.right;
-        throw res;
-      } else {
-        if (response.left.isEmpty) {
-          setState(() {
-            _stopFetchingData = true;
-          });
-          return;
-        }
-        _articles.addAll(response.left);
-        _dataStreamController.add(_articles);
-        _currentPage++;
+      if(response.isEmpty){
+        setState(() {
+          _stopFetchingData = true;
+        });
+        return;
       }
-    } on CustomError catch (err) {
-      _dataStreamController.addError(err);
+
+      _articles.addAll(response);
+      _dataStreamController.add(_articles);
+      _currentPage++;
+
+    } on CustomError catch (error) {
+      log('Home Page : ${error.toString()}');
+      _dataStreamController.addError(error);
     } finally {
       setState(() {
         _isFetchingData = false;
@@ -94,6 +93,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+    _dataStreamController.close();
+  }
+
+  @override
   Widget build(BuildContext context) {
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
@@ -102,6 +107,11 @@ class _HomePageState extends State<HomePage> {
       onWillPop: () => Future.value(false),
       child: SafeArea(
         child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Space News"),
+            backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+          ),
             body: StreamBuilder<List<Article>>(
               stream: dataStream,
               builder: (context, snapshot) {
@@ -109,9 +119,8 @@ class _HomePageState extends State<HomePage> {
                   return const LoadingScreen();
                 } else if (snapshot.hasError) {
                   CustomError error = snapshot.error as CustomError;
-                  return const ErrorPage();
+                  return ErrorPage(refreshPage: _refreshPage,);
                 } else {
-                  final items = snapshot.data;
                   return _articleList();
                 }
               },
@@ -127,55 +136,32 @@ class _HomePageState extends State<HomePage> {
     return Container(
       width: width,
       height: height,
-      child: Column(
-        children: [
-          Expanded(
-              flex: 1,
-              child: Container(
-                color: AppTheme.primaryColor,
+      child: RefreshIndicator(
+        onRefresh: _refreshPage,
+        child: ListView.builder(
+          controller: _scrollController,
+          itemCount: _articles.length + 1,
+          itemBuilder: (context, index) {
+            if (index < _articles.length) {
+              Article currentArticle = _articles[index];
+              return ArticleCard(
+                article: currentArticle,
+              );
+            } else if (!_stopFetchingData && index == _articles.length) {
+              return Container(
                 width: width,
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.only(left: 10),
-                child: const Text(
-                  'Space News',
-                  style: TextStyle(fontSize: 26, color: Colors.white),
+                height: height / 12,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
-              )),
-          Expanded(
-            flex: 12,
-            child: Container(
-              width: width,
-              child: RefreshIndicator(
-                onRefresh: _refreshPage,
-                child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: _articles.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index < _articles.length) {
-                      Article currentArticle = _articles[index];
-                      return ArticleCard(
-                        article: currentArticle,
-                      );
-                    } else if (!_stopFetchingData &&
-                        index == _articles.length) {
-                      return Container(
-                        width: width,
-                        height: height / 12,
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      );
-                    } else {
-                      return Container();
-                    }
-                  },
-                ),
-              ),
-            ),
-          ),
-        ],
+              );
+            } else {
+              return Container();
+            }
+          },
+        ),
       ),
     );
   }

@@ -2,6 +2,18 @@ import 'package:dio/dio.dart';
 
 class Utils{
 
+  static String getHalfSummary(String summary){
+    if(summary == "")return "";
+    List<String> wordList = summary.split(' ');
+    wordList = wordList.sublist(0, wordList.length~/2);
+    String halfSummary = "";
+    for (var element in wordList) {
+      halfSummary += element;
+      halfSummary += " ";
+    }
+    return halfSummary;
+  }
+
   static String getDaysAgo(String updatedAt){
     DateTime updatedAtDate = DateTime.parse(updatedAt);
     DateTime now = DateTime.now();
@@ -25,38 +37,5 @@ class Utils{
       return years == 1 ? '1 year ago' : '$years years ago';
     }
     return days == 1 ? '1 day ago' : '$days days ago';
-  }
-
-  static String handleError(DioException error){
-    switch(error.type){
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.receiveTimeout:
-      case DioExceptionType.sendTimeout:
-        return "Timeout occurred while sending or receiving";
-      case DioExceptionType.badResponse:
-        final statusCode = error.response!.statusCode;
-        switch(statusCode){
-          case 400:
-            return "Bad Request";
-          case 401:
-            return "Unauthorized";
-          case 403:
-            return "Forbidden";
-          case 404:
-            return "Not Required";
-          case 409:
-            return "Conflict";
-          case 500:
-            return "Internal Server Error";
-        }
-        break;
-      case DioExceptionType.cancel:
-        return "Request Cancelled";
-      case DioExceptionType.connectionError:
-        return "Connection Error";
-      default:
-        return "Unknown Error";
-    }
-    return "Unknown Error";
   }
 }

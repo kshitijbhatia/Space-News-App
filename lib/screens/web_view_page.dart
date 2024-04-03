@@ -22,21 +22,21 @@ class WebViewPage extends StatelessWidget{
         },
         child: SafeArea(
           child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Space News'),
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                onPressed: (){
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back),
+              ),
+            ),
             body: Container(
               width: width,
               height: height,
-              child: Column(
-                children: [
-                  const Expanded(
-                    flex: 1,
-                    child: _WebViewPageHeader()
-                  ),
-                  Expanded(
-                    flex: 12,
-                      child: _WebViewComponent(url: url,)
-                  )
-                ],
-              ),
+              child: _WebViewComponent(url: url,)
             ),
           ),
         )
@@ -44,30 +44,6 @@ class WebViewPage extends StatelessWidget{
   }
 }
 
-class _WebViewPageHeader extends StatelessWidget{
-  const _WebViewPageHeader({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    double width = ScreenSize.getWidth(context);
-    return Container(
-      color: AppTheme.primaryColor,
-      width: width,
-      child: Row(
-        children: [
-          IconButton(
-              onPressed: (){
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.arrow_back, color: Colors.white,size: 29,)
-          ),
-          20.w,
-          const Text('Description', style: TextStyle(fontSize: 26, color: Colors.white),)
-        ],
-      ),
-    );
-  }
-}
 
 class _WebViewComponent extends StatefulWidget{
   const _WebViewComponent({super.key, required this.url});

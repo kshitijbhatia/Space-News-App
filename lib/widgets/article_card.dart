@@ -143,17 +143,6 @@ class _ArticleCardState extends State<ArticleCard>{
     double width = ScreenSize.getWidth(context);
     double height = ScreenSize.getHeight(context);
 
-    String getHalfSummary(){
-      String summary = widget.article.summary;
-      List<String> wordList = summary.split(' ').sublist(0, 20);
-      String halfSummary = "";
-      wordList.forEach((element) {
-        halfSummary += element;
-        halfSummary += " ";
-      },);
-      return halfSummary;
-    }
-
     return Container(
         width: width,
         padding: const EdgeInsets.all(10),
@@ -162,17 +151,19 @@ class _ArticleCardState extends State<ArticleCard>{
               style: const TextStyle(fontSize: 18, color: Colors.black),
               children: <TextSpan>[
                 TextSpan(
-                  text: _seeMore ? widget.article.summary : getHalfSummary(),
+                  text: _seeMore ? widget.article.summary : Utils.getHalfSummary(widget.article.summary),
                 ),
-                TextSpan(
-                  text: _seeMore ? 'See Less' : '... See More',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                  recognizer: TapGestureRecognizer()
-                    ..onTap = () => setState(() => _changeSeeMore())
-                )
+                widget.article.summary != ""
+                    ? TextSpan(
+                      text: _seeMore ? ' show less' : '  ...show more',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => setState(() => _changeSeeMore())
+                    )
+                    : const TextSpan()
               ]
             )
         )
