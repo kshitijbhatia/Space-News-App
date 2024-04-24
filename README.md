@@ -2,8 +2,12 @@
 
 ## ScreenShots
 
+https://github.com/kshitijbhatia/Space-News-App/assets/108986570/44315876-64d2-4a87-9271-cf84fe8a1866
+
 ### Home Page And Web Page
 ![Untitled design (7) (1)](https://github.com/kshitijbhatia/Space-News-App/assets/108986570/11230402-ab59-4d18-9c5c-3bff9a521e16)
+### Error Page
+![Untitled design (8) (1)](https://github.com/kshitijbhatia/Space-News-App/assets/108986570/e7214df9-055d-4719-87c5-342bef52bcbf)
 
 ## Description
 This app fetches captivating space articles from a website and presents them on the home page, providing users with a curated selection of intriguing news. Implemented with pagination, users can seamlessly explore more articles by scrolling to the bottom of the screen. Additionally, tapping on an article navigates the user to a web page within the app, offering an immersive reading experience without leaving the app's environment.
